@@ -1,11 +1,11 @@
-lens [![Build Status](https://travis-ci.org/lubyk/lens.png)](https://travis-ci.org/lubyk/lens)
+lens [![Build Status](https://travis-ci.org/lubyk/video.png)](https://travis-ci.org/lubyk/video)
 ===
 
-Lubyk networking and scheduling library.
+Lubyk video library (Mac OS X only for the moment).
 
-[Documentation](http://doc.lubyk.org/lens.html).
+[Documentation](http://doc.lubyk.org/video.html).
 
-install
+install (when released)
 -------
 
-    luarocks install lens
+    luarocks install video
