@@ -52,7 +52,7 @@ build = {
           sources = {
             [5] = 'src/macosx/camera.mm',
           },
-          libraries = {'stdc++', '-framework Foundation', '-framework Cocoa', '-framework QTKit', 'objc'},
+          libraries = {'stdc++', '-framework Foundation', '-framework Cocoa', '-framework AVFoundation', 'objc'},
         },
       },
     },

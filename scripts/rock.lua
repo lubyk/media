@@ -24,7 +24,7 @@ local def = {
       'stdc++',
       '-framework Foundation',
       '-framework Cocoa',
-      '-framework QTKit',
+      '-framework AVFoundation',
       'objc',
     },
   },
