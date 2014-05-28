@@ -104,7 +104,7 @@ public:
     capture_delegate_ = [[CaptureDelegate alloc] initWithCamera:master_ impl:this];
 
     // Dispatch queue
-    dispatch_queue_t videoCaptureQueue = dispatch_queue_create("Video Capture Queue", DISPATCH_QUEUE_SERIAL);
+    dispatch_queue_t videoCaptureQueue = dispatch_queue_create("org.lubyk video.Camera Queue", DISPATCH_QUEUE_SERIAL);
     [video_out setSampleBufferDelegate:capture_delegate_ queue:videoCaptureQueue];
     dispatch_release(videoCaptureQueue);
 
@@ -148,61 +148,56 @@ public:
   }
 
   //===================================================== CAPTURE CALLBACK
-  void captureOutput(AVCaptureOutput *captureOutput,
-      CMSampleBufferRef sampleBuffer,
-      AVCaptureConnection *connection) {
-    if (connection == video_connection_) {
+  void processFrame(CMSampleBufferRef sampleBuffer) {
+    CVImageBufferRef frame = CMSampleBufferGetImageBuffer(sampleBuffer);
 
-
-      CVImageBufferRef frame = CMSampleBufferGetImageBuffer(sampleBuffer);
-      if (CVPixelBufferLockBaseAddress(frame, kCVPixelBufferLock_ReadOnly) == 0) {
-        if (!master_->frame_) {
-          if (CVPixelBufferIsPlanar(frame)) {
-            fprintf(stderr, "Cannot capture frame with multiple planes (planar data not supported).\n");
-            return;
-          }
-          // How do frame dimensions relate to pixel buffer dimensions ?
-          // CMFormatDescriptionRef format = CMSampleBufferGetFormatDescription(sampleBuffer);
-          // CMVideoDimensions size = CMVideoFormatDescriptionGetDimensions( format );
-          // CMVideoCodecType  type = CMFormatDescriptionGetMediaSubType( format );
-          // CMTime timestamp = CMSampleBufferGetPresentationTimeStamp( sampleBuffer );
-
-          int w = CVPixelBufferGetWidth(frame);
-          int h = CVPixelBufferGetHeight(frame);
-          // size_t bytes_per_row = CVPixelBufferGetBytesPerRow(frame);
-
-          int elem = 4; // BGRA
-
-          size_t pad_l, pad_r, pad_t, pad_b;
-
-          CVPixelBufferGetExtendedPixels(frame, &pad_l, &pad_r, &pad_t, &pad_b);
-
-          size_t step = (w + pad_l + pad_r) * elem;
-          size_t padding = (pad_t * step) + (pad_l * elem);
-
-          // cv matrix
-          // new Matrix(
-          //   w,
-          //   h,
-          //   CV_8UC3,
-          //   (unsigned char*)CVPixelBufferGetBaseAddress(frame) + padding,
-          //   step
-          // );
-          // FIXME: if we have pad_l or pad_r the texture will not work properly.
-          if (master_->allocateFrame(w, h, elem)) {
-            master_->padding_ = padding;
-          } else {
-            fprintf(stderr, "Could not allocate frame with size %ix%i, elem size %i.\n", w, h, elem);
-          }
+    if (CVPixelBufferLockBaseAddress(frame, kCVPixelBufferLock_ReadOnly) == 0) {
+      if (!master_->frame_) {
+        if (CVPixelBufferIsPlanar(frame)) {
+          fprintf(stderr, "Cannot capture frame with multiple planes (planar data not supported).\n");
+          return;
         }
+        // How do frame dimensions relate to pixel buffer dimensions ?
+        // CMFormatDescriptionRef format = CMSampleBufferGetFormatDescription(sampleBuffer);
+        // CMVideoDimensions size = CMVideoFormatDescriptionGetDimensions( format );
+        // CMVideoCodecType  type = CMFormatDescriptionGetMediaSubType( format );
+        // CMTime timestamp = CMSampleBufferGetPresentationTimeStamp( sampleBuffer );
 
-        // ======== change data
-        memcpy(master_->frame_,
-            (unsigned char*)CVPixelBufferGetBaseAddress(frame) + master_->padding_,
-            master_->frame_len_);
-        CVPixelBufferUnlockBaseAddress(frame, kCVPixelBufferLock_ReadOnly);
-        [capture_delegate_ performSelectorOnMainThread:@selector(newFrame) withObject:nil waitUntilDone:NO];
+        int w = CVPixelBufferGetWidth(frame);
+        int h = CVPixelBufferGetHeight(frame);
+        // size_t bytes_per_row = CVPixelBufferGetBytesPerRow(frame);
+
+        int elem = 4; // BGRA
+
+        size_t pad_l, pad_r, pad_t, pad_b;
+
+        CVPixelBufferGetExtendedPixels(frame, &pad_l, &pad_r, &pad_t, &pad_b);
+
+        size_t step = (w + pad_l + pad_r) * elem;
+        size_t padding = (pad_t * step) + (pad_l * elem);
+
+        // cv matrix
+        // new Matrix(
+        //   w,
+        //   h,
+        //   CV_8UC3,
+        //   (unsigned char*)CVPixelBufferGetBaseAddress(frame) + padding,
+        //   step
+        // );
+        // FIXME: if we have pad_l or pad_r the texture will not work properly.
+        if (master_->allocateFrame(w, h, elem)) {
+          master_->padding_ = padding;
+        } else {
+          fprintf(stderr, "Could not allocate frame with size %ix%i, elem size %i.\n", w, h, elem);
+        }
       }
+
+      // ======== change data
+      memcpy(master_->frame_,
+          (unsigned char*)CVPixelBufferGetBaseAddress(frame) + master_->padding_,
+          master_->frame_len_);
+      CVPixelBufferUnlockBaseAddress(frame, kCVPixelBufferLock_ReadOnly);
+      [capture_delegate_ performSelectorOnMainThread:@selector(newFrame) withObject:nil waitUntilDone:NO];
     }
   }
   
@@ -226,7 +221,8 @@ public:
 /** This callback is NOT CALLED ON MAIN THREAD.
  */
 - (void)captureOutput:(AVCaptureOutput *)captureOutput didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection *)connection {
-  impl_->captureOutput(captureOutput, sampleBuffer, connection);
+  // if we were capturing audio, we would need to check connection == video_connection_.
+  impl_->processFrame(sampleBuffer);
 }
 
 @end

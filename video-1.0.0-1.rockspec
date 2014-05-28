@@ -25,7 +25,7 @@ build = {
     -- Plain Lua files
     ['video'          ] = 'video/init.lua',
     ['video.Camera'   ] = 'video/Camera.lua',
-    ['video.File'     ] = 'video/File.lua',
+    ['video.Decoder'  ] = 'video/Decoder.lua',
     -- C module
     ['video.core'     ] = {
       sources = {
@@ -33,6 +33,7 @@ build = {
         'src/bind/video_Buffer.cpp',
         'src/bind/video_Camera.cpp',
         'src/bind/video_core.cpp',
+        'src/bind/video_Decoder.cpp',
       },
       incdirs   = {'include', 'src/bind'},
       libraries = {'stdc++'},
@@ -50,7 +51,8 @@ build = {
       modules = {
         ['video.core'] = {
           sources = {
-            [5] = 'src/macosx/camera.mm',
+            [6] = 'src/macosx/camera.mm',
+            [7] = 'src/macosx/decoder.mm',
           },
           libraries = {'stdc++', '-framework Foundation', '-framework Cocoa', '-framework AVFoundation', 'objc'},
         },

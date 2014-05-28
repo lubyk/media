@@ -47,6 +47,14 @@ public:
 
   virtual ~Camera();
 
+  /** Returns the time between each frame.
+   * frameRate() * frameCount() => duration
+   */
+  double frameRate() {
+    throw dub::Exception("#frameRate not implemented for video.Camera yet.");
+    return 0;
+  }
+
   /** Start capture.
    */
   void start();

@@ -1,6 +1,6 @@
 --[[------------------------------------------------------
 
-  # Camera
+  # Decoder
 
   Access to video capture devices. The implementation has
   been optimized to avoid copying data. This means that the
@@ -10,39 +10,38 @@
 
     local video = require 'video'
 
-    -- List sources
-    for name, uid in pairs(video.Camera.sources()) do
-      print(name, uid)
-    end
-
-    -- Create camera object from default video source
-    camera = video.Camera()
+    -- Create decoder from file
+    movie = video.Decoder('/some/path/to/video.mp4')
 
     -- Setup callback on new frames
-    function camera:newFrame()
+    function movie:newFrame()
       print('new frame', 'size', camera:frameLength())
-      -- camera:frameData() --> lightuserdata void*
+      -- movie:frameData() --> lightuserdata void*
     end
 
-    -- Start capturing frames.
-    camera:start()
+    -- Read frames at regular intervals
+    tim = lens.Timer(1/30, function()
+      movie:nextFrame()
+    end)
+
+    TODO: movie:start() should create timer with frame rate.
+
 --]]------------------------------------------------------
 local video = require 'video'
 local core  = require 'video.core'
-local lib   = core.Camera
+local lib   = core.Decoder
 local o_new = lib.new
 
 -- # Constructor
 --
--- Create a camera object. If `device_uid` is not provided, uses the default
--- video capture device (or the first). The `new_frame` callback function can
--- also be set with #newFrame.
--- function new(device_uid, callback)
+-- Create a decoder object from a movie given by a path or url.
+-- The `new_frame` callback function can also be set with #newFrame.
+-- function new(asset_url, callback)
 
-local function new(device_uid, callback)
+local function new(asset_url, callback)
   local self
-  if device_uid then
-    self = o_new(device_uid)
+  if asset_url then
+    self = o_new(asset_url)
   else
     self = o_new()
   end
@@ -52,7 +51,7 @@ end
 
 -- nodoc
 function lib.new(...)
-  -- Ensures gui is running when creating first Camera object.
+  -- Ensures gui is running when creating first Decoder object.
   return video.bootstrap(lib, new, ...)
 end
 
@@ -66,10 +65,8 @@ end
 -- function lib.frameSize()
 
 -- # Callback
-
--- This is called every time a new frame arrives from the capture device. It is
--- only safe to access the frameData
+--
+-- This is called every time a new frame arrives from the capture device.
 -- function lib:newFrame
 
 return lib
-

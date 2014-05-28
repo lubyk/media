@@ -74,8 +74,24 @@ static int Camera__Camera(lua_State *L) {
   return dub::error(L);
 }
 
+/** double video::Camera::frameRate()
+ * include/video/Camera.h:53
+ */
+static int Camera_frameRate(lua_State *L) {
+  try {
+    Camera *self = *((Camera **)dub::checksdata(L, 1, "video.Camera"));
+    lua_pushnumber(L, self->frameRate());
+    return 1;
+  } catch (std::exception &e) {
+    lua_pushfstring(L, "frameRate: %s", e.what());
+  } catch (...) {
+    lua_pushfstring(L, "frameRate: Unknown exception");
+  }
+  return dub::error(L);
+}
+
 /** void video::Camera::start()
- * include/video/Camera.h:52
+ * include/video/Camera.h:60
  */
 static int Camera_start(lua_State *L) {
   try {
@@ -91,7 +107,7 @@ static int Camera_start(lua_State *L) {
 }
 
 /** void video::Camera::stop()
- * include/video/Camera.h:56
+ * include/video/Camera.h:64
  */
 static int Camera_stop(lua_State *L) {
   try {
@@ -107,7 +123,7 @@ static int Camera_stop(lua_State *L) {
 }
 
 /** LuaStackSize video::Camera::__tostring(lua_State *L)
- * include/video/Camera.h:65
+ * include/video/Camera.h:73
  */
 static int Camera___tostring(lua_State *L) {
   try {
@@ -122,7 +138,7 @@ static int Camera___tostring(lua_State *L) {
 }
 
 /** static LuaStackSize video::Camera::sources(lua_State *L)
- * include/video/Camera.h:61
+ * include/video/Camera.h:69
  */
 static int Camera_sources(lua_State *L) {
   try {
@@ -189,6 +205,7 @@ static const struct luaL_Reg Camera_member_methods[] = {
   { "_cast_"       , Camera__cast_        },
   { "new"          , Camera_Camera        },
   { "__gc"         , Camera__Camera       },
+  { "frameRate"    , Camera_frameRate     },
   { "start"        , Camera_start         },
   { "stop"         , Camera_stop          },
   { "__tostring"   , Camera___tostring    },

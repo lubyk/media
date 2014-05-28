@@ -26,37 +26,53 @@
 
   ==============================================================================
 */
-#ifndef LUBYK_INCLUDE_VIDEO_FILE_H_
-#define LUBYK_INCLUDE_VIDEO_FILE_H_
+#ifndef LUBYK_INCLUDE_VIDEO_DECODER_H_
+#define LUBYK_INCLUDE_VIDEO_DECODER_H_
 
+#include "video/Buffer.h"
 #include "dub/dub.h"
 
 namespace video {
 
-/** Get video from a file.
+/** Get video from an external camera or webcam.
  * 
  * @dub push: dub_pushobject
  *      ignore: newFrame
  */
-class File : public dub::Thread {
-  lug::Buffer buffer_;
+class Decoder : public Buffer, public dub::Thread {
 public:
-  File();
+  /** Create decoder with asset (mp4 file) url or path.
+   */
+  Decoder(const char *asset_url);
 
-  virtual ~File();
+  virtual ~Decoder();
 
-  void newFrame(void *data, size_t len) {
+  /** Get next frame. When the frame is available, the callback 'newFrame' is
+   * called. This operation is synchronous with frame decoding on Mac OS X.
+   *
+   * If the read head reaches the end, returns false.
+   */
+  bool nextFrame();
+
+  /** String representation.
+   */
+  LuaStackSize __tostring(lua_State *L);
+
+  // ================================= CALLBACKS
+
+  void newFrame() {
     if (!dub_pushcallback("newFrame")) return;
     // <func> <self>
-    // video = light user data
+    dub_call(1, 0);
+  }
 
-private:
   class Implementation;
+private:
   Implementation *impl_;
 };
 
 } // video
 
-#endif // LUBYK_INCLUDE_VIDEO_FILE_H_
+#endif // LUBYK_INCLUDE_VIDEO_DECODER_H_
 
 
