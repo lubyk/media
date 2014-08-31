@@ -26,86 +26,66 @@
 
   ==============================================================================
 */
-#ifndef LUBYK_INCLUDE_VIDEO_BUFFER_H_
-#define LUBYK_INCLUDE_VIDEO_BUFFER_H_
+#ifndef LUBYK_INCLUDE_MEDIA_CAMERA_H_
+#define LUBYK_INCLUDE_MEDIA_CAMERA_H_
 
+#include "media/Buffer.h"
 #include "dub/dub.h"
 
-namespace video {
+namespace media {
 
-/** Internal class for video storage.
+/** Get video from an external camera or webcam.
  * 
+ * @dub push: dub_pushobject
+ *      ignore: newFrame
  */
-class Buffer {
-protected:
-  /** Holds data for the current frame. Note that this changes
-   * on every image frame update.
-   */
-  unsigned char *frame_;
-  size_t frame_len_;
-  int width_;
-  int height_;
-  int elem_size_;
-  int padding_;
+class Camera : public Buffer, public dub::Thread {
 public:
-  Buffer()
-    : frame_(NULL)
-    , frame_len_(0)
-    , width_(0)
-    , height_(0)
-    , elem_size_(0)
-  {}
-
-
-  virtual ~Buffer() {
-    if (frame_) free(frame_);
-  }
-
-  /** Return current frame data.
+  /** Create camera with device id.
    */
-  LuaStackSize frameData(lua_State *L) {
-    if (!frame_) return 0;
-    lua_pushlightuserdata(L, frame_);
-    return 1;
-  }
+  Camera(const char *device_uid = NULL);
 
-  /** Return current frame size.
+  virtual ~Camera();
+
+  /** Returns the time between each frame.
+   * frameRate() * frameCount() => duration
    */
-  size_t frameSize() {
-    return frame_len_;
+  double frameRate() {
+    throw dub::Exception("#frameRate not implemented for media.Camera yet.");
+    return 0;
   }
 
-  LuaStackSize frameInfo(lua_State *L) {
-    lua_pushnumber(L, width_);
-    lua_pushnumber(L, height_);
-    lua_pushnumber(L, elem_size_);
-    return 3;
+  /** Start capture.
+   */
+  void start();
+
+  /** Stop capture.
+   */
+  void stop();
+
+  /** Return a table with the source names to
+   * device uid map.
+   */
+  static LuaStackSize sources(lua_State *L);
+
+  /** String representation.
+   */
+  LuaStackSize __tostring(lua_State *L);
+
+  // ================================= CALLBACKS
+
+  void newFrame() {
+    if (!dub_pushcallback("newFrame")) return;
+    // <func> <self>
+    dub_call(1, 0);
   }
 
-protected:
-  bool allocateFrame(int w, int h, int elem) {
-    if (frame_) {
-      throw dub::Exception("Cannot resize or reallocate frame.");
-    }
-
-    size_t len = w * h * elem;
-    // alloc
-    frame_ = (unsigned char*)malloc(len);
-    if (frame_) {
-      frame_len_ = len;
-      width_     = w;
-      height_    = h;
-      elem_size_ = elem;
-      return true;
-    } else {
-      return false;
-    }
-  }
-
+  class Implementation;
+private:
+  Implementation *impl_;
 };
 
-} // video
+} // media
 
-#endif // LUBYK_INCLUDE_VIDEO_BUFFER_H_
-
+#endif // LUBYK_INCLUDE_MEDIA_CAMERA_H_
 

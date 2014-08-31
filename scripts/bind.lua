@@ -6,7 +6,7 @@ local dub = require 'dub'
 
 local ins = dub.Inspector {
   INPUT    = {
-    lub.path '|../include/video',
+    lub.path '|../include/media',
   },
   --doc_dir = base .. '/tmp',
   --html = true,
@@ -20,7 +20,7 @@ binder:bind(ins, {
   -- Remove this part in included headers
   header_base = lub.path '|../include',
   -- Create a single library.
-  single_lib = 'video',
-  -- Open the library with require 'video.core' (not 'video')
-  luaopen    = 'video_core',
+  single_lib = 'media',
+  -- Open the library with require 'media.core' (not 'media')
+  luaopen    = 'media_core',
 })

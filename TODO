@@ -1,0 +1,1 @@
+* Support alpha channel in images (src/decoder.mm).

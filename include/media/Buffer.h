@@ -26,62 +26,88 @@
 
   ==============================================================================
 */
-#ifndef LUBYK_INCLUDE_VIDEO_DECODER_H_
-#define LUBYK_INCLUDE_VIDEO_DECODER_H_
+#ifndef LUBYK_INCLUDE_MEDIA_BUFFER_H_
+#define LUBYK_INCLUDE_MEDIA_BUFFER_H_
 
-#include "video/Buffer.h"
 #include "dub/dub.h"
 
-namespace video {
+#include <stdlib.h> // malloc, free
 
-/** Get video from an external camera or webcam.
+namespace media {
+
+/** Internal class for media storage.
  * 
- * @dub push: dub_pushobject
- *      ignore: newFrame
  */
-class Decoder : public Buffer, public dub::Thread {
+class Buffer {
+protected:
+  /** Holds data for the current frame. Note that this changes
+   * on every image frame update.
+   */
+  unsigned char *frame_;
+  size_t frame_len_;
+  int width_;
+  int height_;
+  int elem_size_;
+  int padding_;
 public:
-  /** Create decoder with asset (mp4 file) url or path.
-   */
-  Decoder(const char *asset_url);
+  Buffer()
+    : frame_(NULL)
+    , frame_len_(0)
+    , width_(0)
+    , height_(0)
+    , elem_size_(0)
+  {}
 
-  virtual ~Decoder();
 
-  /** Get ready for decoding or restart.
-   * This is called implicetely on first #nextFrame call.
-   */
-  void start();
-
-  /** Stop decoding.
-   */
-  void stop();
-
-  /** Get next frame. When the frame is available, the callback 'newFrame' is
-   * called. This operation is synchronous with frame decoding on Mac OS X.
-   *
-   * If the read head reaches the end, returns false.
-   */
-  bool nextFrame();
-
-  /** String representation.
-   */
-  LuaStackSize __tostring(lua_State *L);
-
-  // ================================= CALLBACKS
-
-  void newFrame() {
-    if (!dub_pushcallback("newFrame")) return;
-    // <func> <self>
-    dub_call(1, 0);
+  virtual ~Buffer() {
+    if (frame_) free(frame_);
   }
 
-  class Implementation;
-private:
-  Implementation *impl_;
+  /** Return current frame data.
+   */
+  LuaStackSize frameData(lua_State *L) {
+    if (!frame_) return 0;
+    lua_pushlightuserdata(L, frame_);
+    return 1;
+  }
+
+  /** Return current frame size.
+   */
+  size_t frameSize() {
+    return frame_len_;
+  }
+
+  LuaStackSize frameInfo(lua_State *L) {
+    lua_pushnumber(L, width_);
+    lua_pushnumber(L, height_);
+    lua_pushnumber(L, elem_size_);
+    return 3;
+  }
+
+protected:
+  bool allocateFrame(int w, int h, int elem) {
+    if (frame_) {
+      throw dub::Exception("Cannot resize or reallocate frame.");
+    }
+
+    size_t len = w * h * elem;
+    // alloc
+    frame_ = (unsigned char*)malloc(len);
+    if (frame_) {
+      frame_len_ = len;
+      width_     = w;
+      height_    = h;
+      elem_size_ = elem;
+      return true;
+    } else {
+      return false;
+    }
+  }
+
 };
 
-} // video
+} // media
 
-#endif // LUBYK_INCLUDE_VIDEO_DECODER_H_
+#endif // LUBYK_INCLUDE_MEDIA_BUFFER_H_
 
 

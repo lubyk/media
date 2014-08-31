@@ -8,15 +8,15 @@
 
   Usage example:
 
-    local video = require 'video'
+    local media = require 'media'
 
     -- List sources
-    for name, uid in pairs(video.Camera.sources()) do
+    for name, uid in pairs(media.Camera.sources()) do
       print(name, uid)
     end
 
     -- Create camera object from default video source
-    camera = video.Camera()
+    camera = media.Camera()
 
     -- Setup callback on new frames
     function camera:newFrame()
@@ -27,8 +27,8 @@
     -- Start capturing frames.
     camera:start()
 --]]------------------------------------------------------
-local video = require 'video'
-local core  = require 'video.core'
+local media = require 'media'
+local core  = require 'media.core'
 local lib   = core.Camera
 local o_new = lib.new
 
@@ -53,7 +53,7 @@ end
 -- nodoc
 function lib.new(...)
   -- Ensures gui is running when creating first Camera object.
-  return video.bootstrap(lib, new, ...)
+  return media.bootstrap(lib, new, ...)
 end
 
 -- # Methods

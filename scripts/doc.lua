@@ -4,10 +4,10 @@
 local lut = require 'lut'
 lut.Doc.make {
   sources = {
-    'lens',
-    {'doc', prepend = 'example/lens'},
+    'media',
+    {'doc', prepend = 'example/media'},
   },
-  copy = { 'doc', prepend = 'example/lens', filter = '%.lua' },
+  copy = { 'doc', prepend = 'example/media', filter = '%.lua' },
   target = 'html',
   format = 'html',
   header = [[<h1><a href='http://lubyk.org'>Lubyk</a> documentation</h1> ]],

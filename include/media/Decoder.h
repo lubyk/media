@@ -26,47 +26,49 @@
 
   ==============================================================================
 */
-#ifndef LUBYK_INCLUDE_VIDEO_CAMERA_H_
-#define LUBYK_INCLUDE_VIDEO_CAMERA_H_
+#ifndef LUBYK_INCLUDE_MEDIA_DECODER_H_
+#define LUBYK_INCLUDE_MEDIA_DECODER_H_
 
-#include "video/Buffer.h"
+#include "media/Buffer.h"
 #include "dub/dub.h"
 
-namespace video {
+namespace media {
 
 /** Get video from an external camera or webcam.
  * 
  * @dub push: dub_pushobject
  *      ignore: newFrame
  */
-class Camera : public Buffer, public dub::Thread {
+class Decoder : public Buffer, public dub::Thread {
 public:
-  /** Create camera with device id.
+  /** Create decoder with asset (mp4 file) url or path.
    */
-  Camera(const char *device_uid = NULL);
+  Decoder(bool is_image);
 
-  virtual ~Camera();
+  virtual ~Decoder();
 
-  /** Returns the time between each frame.
-   * frameRate() * frameCount() => duration
-   */
-  double frameRate() {
-    throw dub::Exception("#frameRate not implemented for video.Camera yet.");
-    return 0;
-  }
-
-  /** Start capture.
+  /** Get ready for decoding or restart.
+   * This is called implicetely on first #nextFrame call.
    */
   void start();
 
-  /** Stop capture.
+  /** Stop decoding.
    */
   void stop();
 
-  /** Return a table with the source names to
-   * device uid map.
+  /** Get next frame. When the frame is available, the callback 'newFrame' is
+   * called. This operation is synchronous with frame decoding on Mac OS X.
+   *
+   * If the read head reaches the end, returns false.
    */
-  static LuaStackSize sources(lua_State *L);
+  bool nextFrame();
+
+  /** Load another asset. If the frame/image is the same size, internal memory
+   * can be reused.
+   */
+  void loadAsset(const char *url);
+
+  bool isImage();
 
   /** String representation.
    */
@@ -85,7 +87,8 @@ private:
   Implementation *impl_;
 };
 
-} // video
+} // media
 
-#endif // LUBYK_INCLUDE_VIDEO_CAMERA_H_
+#endif // LUBYK_INCLUDE_MEDIA_DECODER_H_
+
 

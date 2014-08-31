@@ -21,7 +21,7 @@
 local lens  = require 'lens'
 local lui   = require 'lui'
 local four  = require 'four'
-local video = require 'video'
+local media = require 'media'
 
 -- Autoload this script.
 lens.run(function() lens.FileWatch() end)
@@ -96,7 +96,7 @@ local function square()
   -- End of the local `square()` function definition.
 end
 
-movie = movie or video.Decoder(arg[1] or 'plants.MOV')
+movie = movie or media.Decoder(arg[1] or 'plants.MOV')
 
 local V3, Texture = four.V3, four.Texture
 function texture(w, h)
@@ -107,7 +107,7 @@ function texture(w, h)
   }
   
   return Texture { type = Texture.TYPE_2D, 
-                   internal_format = Texture.BGRA_8UN,  --RGB_8UN,
+                   internal_format = movie:isImage() and Texture.RGBA_8UN or Texture.BGRA_8UN,
                    size = V3(w, h, 1),
                    wrap_s = Texture.WRAP_CLAMP_TO_EDGE,
                    wrap_t = Texture.WRAP_CLAMP_TO_EDGE,
@@ -197,7 +197,9 @@ effect.fragment = four.Effect.Shader [[
     //color = vec4(r/4 +  img.r, g/4 + img.g, b/4 + img.b, 1);
     // color = vec4(r ,g, b, 1);
 
+    vec4 img = texture(movtex, v_tex);
     color = vec4(imgr.r, imgg.g, imgb.b, 1);
+    //color = vec4(img.r, img.g, img.b, 1);
   }
 ]]
 

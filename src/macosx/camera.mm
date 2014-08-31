@@ -1,8 +1,8 @@
-#include "video/Camera.h"
+#include "media/Camera.h"
 
 #import <AVFoundation/AVFoundation.h>
 
-using namespace video;
+using namespace media;
 
 /* ======================== Capture delegate ============== */
 

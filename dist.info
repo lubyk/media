@@ -1,10 +1,10 @@
-name = "video"
+name = "media"
 version = "1.0.0"
 
-desc = "Lubyk video."
+desc = "Lubyk media."
 author = "Gaspard Bucher"
 license = "MIT"
-url = "http://doc.lubyk.org/video.html"
+url = "http://doc.lubyk.org/media.html"
 maintainer = "Gaspard Bucher"
 
 depends = {

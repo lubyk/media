@@ -1,4 +1,5 @@
 == 1.0.0
 
   * Migrated code from lk.
-  * Classes: Camera, File
+  * Classes: Camera, Decoder
+  * Added support for fixed images and folders
