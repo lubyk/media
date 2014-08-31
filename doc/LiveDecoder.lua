@@ -63,16 +63,16 @@ local function square()
   --
   -- Create four vertices, one for each corner.
   vb:push3D(-1.0, -1.0, 0.0)
-  tex:push2D(1.0, 1.0)
-
-  vb:push3D( 1.0, -1.0, 0.0)
   tex:push2D(0.0, 1.0)
 
+  vb:push3D( 1.0, -1.0, 0.0)
+  tex:push2D(1.0, 1.0)
+
   vb:push3D(-1.0,  1.0, 0.0)
-  tex:push2D(1.0, 0.0)
+  tex:push2D(0.0, 0.0)
 
   vb:push3D( 1.0,  1.0, 0.0)
-  tex:push2D(0.0, 0.0)
+  tex:push2D(1.0, 0.0)
 
   -- Colors for the positions above.
   cb:pushV4(four.Color.red())
@@ -176,22 +176,31 @@ effect.fragment = four.Effect.Shader [[
   // These uniform names must reflect the default_uniforms that we declared.
   uniform float saturation;
   uniform float time;
-  float t = time;
+  float t = time / 10;
   float sat = saturation * 0.8 * (0.5 + 0.5 * sin(t/10));
 
   out vec4 color;
 
   void main() {
-    vec4 v = 70 * (v_vertex + vec4(sin(t/8), sin(t/20), sin(t/30), 0.0));
-    vec4 img = texture(movtex, v_tex);
-    float bw = (img.r+img.g+img.b)/3;
-    float r = img.r * sin(v.x/30) * sin(v.y * bw); //sin(v.x + bw * t); // img.r;
-    float g = img.g * sin(v.x/10.4) * sin(v.y * bw); //sin(v.x + bw * t); // img.g;
-    float b = img.b * sin(v.x) * sin(v.y * bw); //sin(v.x + bw * t); // img.b;
-    color = vec4(r, g, b, 1);
-    //color = img;
+    vec2 speed = vec2(1, 1);
+    vec2 scale = vec2(30, 80);
+    vec2 vr = v_tex + 0.05 * vec2(0.5 + 0.5 * sin(scale.x * sin((speed.x+0.2)*t) * v_tex.x), 0.5 + 0.5 * sin(scale.y * sin((speed.y + 0)*t) * v_tex.y));
+    vec2 vg = v_tex + 0.05 * vec2(0.5 + 0.5 * sin(scale.x * sin((speed.x+0.1)*t) * v_tex.x), 0.5 + 0.5 * sin(scale.y * sin((speed.y + 0)*t) * v_tex.y));
+    vec2 vb = v_tex + 0.05 * vec2(0.5 + 0.5 * sin(scale.x * sin((speed.x-0.3)*t) * v_tex.x), 0.5 + 0.5 * sin(scale.y * sin((speed.y + 0.2)*t) * v_tex.y));
+    vec4 imgr = texture(movtex, vr);
+    vec4 imgg = texture(movtex, vg);
+    vec4 imgb = texture(movtex, vb);
+    // float bw = (img.r+img.g+img.b)/3;
+    // float r = sin(bw); // img.r;
+    // float g = sin(bw); // img.g;
+    // float b = sin(bw); // img.b;
+    //color = vec4(r/4 +  img.r, g/4 + img.g, b/4 + img.b, 1);
+    // color = vec4(r ,g, b, 1);
+
+    color = vec4(imgr.r, imgg.g, imgb.b, 1);
   }
 ]]
+
 
 -- # Renderable
 --
@@ -283,7 +292,10 @@ timer = timer or lens.Timer(1/20)
 
 function timer:timeout()
   if not movie:nextFrame() then
-    print('no')
+    -- restart play head
+    print('loop')
+    movie:start()
+    movie:nextFrame()
   end
 
   win:draw()

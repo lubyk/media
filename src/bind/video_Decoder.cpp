@@ -67,8 +67,40 @@ static int Decoder__Decoder(lua_State *L) {
   return dub::error(L);
 }
 
+/** void video::Decoder::start()
+ * include/video/Decoder.h:53
+ */
+static int Decoder_start(lua_State *L) {
+  try {
+    Decoder *self = *((Decoder **)dub::checksdata(L, 1, "video.Decoder"));
+    self->start();
+    return 0;
+  } catch (std::exception &e) {
+    lua_pushfstring(L, "start: %s", e.what());
+  } catch (...) {
+    lua_pushfstring(L, "start: Unknown exception");
+  }
+  return dub::error(L);
+}
+
+/** void video::Decoder::stop()
+ * include/video/Decoder.h:57
+ */
+static int Decoder_stop(lua_State *L) {
+  try {
+    Decoder *self = *((Decoder **)dub::checksdata(L, 1, "video.Decoder"));
+    self->stop();
+    return 0;
+  } catch (std::exception &e) {
+    lua_pushfstring(L, "stop: %s", e.what());
+  } catch (...) {
+    lua_pushfstring(L, "stop: Unknown exception");
+  }
+  return dub::error(L);
+}
+
 /** bool video::Decoder::nextFrame()
- * include/video/Decoder.h:55
+ * include/video/Decoder.h:64
  */
 static int Decoder_nextFrame(lua_State *L) {
   try {
@@ -84,7 +116,7 @@ static int Decoder_nextFrame(lua_State *L) {
 }
 
 /** LuaStackSize video::Decoder::__tostring(lua_State *L)
- * include/video/Decoder.h:59
+ * include/video/Decoder.h:68
  */
 static int Decoder___tostring(lua_State *L) {
   try {
@@ -152,6 +184,8 @@ static const struct luaL_Reg Decoder_member_methods[] = {
   { "_cast_"       , Decoder__cast_       },
   { "new"          , Decoder_Decoder      },
   { "__gc"         , Decoder__Decoder     },
+  { "start"        , Decoder_start        },
+  { "stop"         , Decoder_stop         },
   { "nextFrame"    , Decoder_nextFrame    },
   { "__tostring"   , Decoder___tostring   },
   { "frameData"    , Decoder_frameData    },

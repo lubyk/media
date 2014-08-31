@@ -28,14 +28,40 @@ public:
       , video_queue_(NULL)
   {
     // NSURL acc
-    printf("Start\n");
     //asset_url_ = [[NSURL alloc] initWithString:[NSString stringWithUTF8String:asset_url]];
     asset_url_ = [[NSURL alloc] initFileURLWithPath:[NSString stringWithUTF8String:asset_url]];
     if (!asset_url_) {
       throw dub::Exception("Invalid url '%s'.", asset_url);
     }
+  }
 
-    AVAsset *asset = [AVAsset assetWithURL:asset_url_];
+  ~Implementation() {
+    stop();
+  }
+
+
+  void stop() {
+    if (video_queue_) {
+    }
+    if (asset_reader_) {
+      [asset_reader_ cancelReading];
+      [asset_reader_ release];
+      asset_reader_ = nil;
+    }
+    if (asset_output_) {
+      [asset_output_ release];
+      asset_output_ = nil;
+    }
+  }
+
+  void start() {
+    stop();
+
+    printf("Start\n");
+    // AVAsset *asset = [AVAsset assetWithURL:asset_url_];
+    NSDictionary *options = @{ AVURLAssetPreferPreciseDurationAndTimingKey : @YES };
+    AVURLAsset *asset = [AVURLAsset URLAssetWithURL:asset_url_ options:options];
+    
     if (!asset) {
       throw dub::Exception("Could not create AVAsset with url '%s'.", [[asset_url_ absoluteString] UTF8String]);
     }
@@ -64,6 +90,7 @@ public:
         initWithTrack:video_track
        outputSettings:@{(NSString*)kCVPixelBufferPixelFormatTypeKey: @(kCVPixelFormatType_32BGRA)}];
     
+    asset_output_.alwaysCopiesSampleData = NO;
     [asset_reader_ addOutput:asset_output_];
 
     // get ready for decoding
@@ -72,25 +99,28 @@ public:
     [asset_reader_ startReading];
   }
 
-  ~Implementation() {
-    if (asset_reader_) {
-      [asset_reader_ cancelReading];
-      [asset_reader_ release];
-      asset_reader_ = nil;
-    }
-    if (asset_output_) {
-      [asset_output_ release];
-      asset_output_ = nil;
-    }
-  }
 
   bool nextFrame() {
+    if (!asset_reader_) start();
+
     if ([asset_reader_ status] == AVAssetReaderStatusReading) {
+
+      // Asset reader can change between now and end of block execution.
+      // protect by using a local variable. The block will retain so we do
+      // not have to retain/release.
+      AVAssetReader *asset_reader = asset_reader_;
+      AVAssetReaderTrackOutput *asset_output = asset_output_;
       dispatch_async(video_queue_, ^{
         // Execute in video queue.
-        CMSampleBufferRef buffer = [asset_output_ copyNextSampleBuffer];
-        processFrame(buffer);
-        CFRelease(buffer);
+        if ([asset_reader status] == AVAssetReaderStatusReading) {
+          // asset_reader could be halted between calls.
+          CMSampleBufferRef buffer = [asset_output copyNextSampleBuffer];
+          if (buffer) {
+            processFrame(buffer);
+            CMSampleBufferInvalidate(buffer);
+            CFRelease(buffer);   
+          }
+        }
       });
       return true;
     } else {
@@ -180,6 +210,14 @@ Decoder::Decoder(const char *device_uid) {
 
 Decoder::~Decoder() {
   if (impl_) delete impl_;
+}
+
+void Decoder::start() {
+  impl_->start();
+}
+
+void Decoder::stop() {
+  impl_->stop();
 }
 
 bool Decoder::nextFrame() {

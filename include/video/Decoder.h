@@ -47,6 +47,15 @@ public:
 
   virtual ~Decoder();
 
+  /** Get ready for decoding or restart.
+   * This is called implicetely on first #nextFrame call.
+   */
+  void start();
+
+  /** Stop decoding.
+   */
+  void stop();
+
   /** Get next frame. When the frame is available, the callback 'newFrame' is
    * called. This operation is synchronous with frame decoding on Mac OS X.
    *

@@ -7,17 +7,17 @@ source = {
 description = {
   summary = "Lubyk video.",
   detailed = [[
-    video.Camera: live video stream from a camera or webcam.
+  video.Camera: live video stream from a camera or webcam.
 
-    video.File: read a video from a file.
-    ]],
+  video.File: read a video from a file.
+  ]],
   homepage = "http://doc.lubyk.org/video.html",
   license = "MIT"
 }
 
 dependencies = {
   "lua >= 5.1, < 5.3",
-  "lub >= 1.0.3, < 1.1",
+  "lub >= 1.0.3, < 2.0",
 }
 build = {
   type = 'builtin',
@@ -60,3 +60,4 @@ build = {
     },
   },
 }
+
