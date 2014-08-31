@@ -32,6 +32,7 @@
 local lub   = require 'lub'
 local media = require 'media'
 local core  = require 'media.core'
+local four
 local lib   = core.Decoder
 local o_new = lib.new
 
@@ -99,6 +100,47 @@ end
 
 -- Load another asset.
 -- function lib:loadAsset(asset_url)
+
+-- Get four.Texture (OpenGL texture).
+function lib:texture()
+  local w, h = self:frameInfo()
+  if self.ftex then
+    if self.ftex.size[1] ~= w or
+       self.ftex.size[2] ~= h then
+      -- create new texture
+    else
+      -- mark as dirty
+      self.ftex.data.updated = true
+      return self.ftex
+    end
+  end
+
+  if not four then
+    four = require 'four'
+  end
+
+  local V3, Texture = four.V3, four.Texture
+
+  local data = four.Buffer {
+    scalar_type = four.Buffer.UNSIGNED_BYTE,
+    cdata = function() return self:frameData() end,
+    csize = function() return self:frameSize() end,
+  }
+  self.data = data
+  
+  self.ftex = Texture { 
+    type = Texture.TYPE_2D, 
+    internal_format = self:isImage() and Texture.RGBA_8UN or Texture.BGRA_8UN,
+    size = V3(w, h, 1),
+    wrap_s = Texture.WRAP_CLAMP_TO_EDGE,
+    wrap_t = Texture.WRAP_CLAMP_TO_EDGE,
+    mag_filter = Texture.MAG_LINEAR,
+    min_filter = Texture.MIN_LINEAR_MIPMAP_LINEAR,
+    generate_mipmaps = true, 
+    data = data
+  }
+  return self.ftex
+end
 
 -- # Callback
 --

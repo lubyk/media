@@ -98,26 +98,6 @@ end
 
 movie = movie or media.Decoder(arg[1] or 'plants.MOV')
 
-local V3, Texture = four.V3, four.Texture
-function texture(w, h)
-  local data = four.Buffer {
-    scalar_type = four.Buffer.UNSIGNED_BYTE,
-    cdata = function() return movie:frameData() end,
-    csize = function() return movie:frameSize() end,
-  }
-  
-  return Texture { type = Texture.TYPE_2D, 
-                   internal_format = movie:isImage() and Texture.RGBA_8UN or Texture.BGRA_8UN,
-                   size = V3(w, h, 1),
-                   wrap_s = Texture.WRAP_CLAMP_TO_EDGE,
-                   wrap_t = Texture.WRAP_CLAMP_TO_EDGE,
-                   mag_filter = Texture.MAG_LINEAR,
-                   min_filter = Texture.MIN_LINEAR_MIPMAP_LINEAR,
-                   generate_mipmaps = true, 
-                   data = data }
-end
-
-
 -- # Renderer
 --
 -- Create the renderer with four.Renderer.
@@ -199,7 +179,7 @@ effect.fragment = four.Effect.Shader [[
 
     vec4 img = texture(movtex, v_tex);
     color = vec4(imgr.r, imgg.g, imgb.b, 1);
-    //color = vec4(img.r, img.g, img.b, 1);
+    color = vec4(img.r, img.g, img.b, 1);
   }
 ]]
 
@@ -218,17 +198,12 @@ obj = obj or {
   saturation = SATURATION,
   geometry   = square(),
   effect     = effect,
-  movtex     = texture(10, 10),
+  movtex     = movie:texture(),
 }
 
 local last1 = lens.elapsed()
 function movie:newFrame()
-  local now = lens.elapsed()
-  --print(math.floor((now - last1) * 1000 + 0.5))
-  --print(1/(now - last1))
-  last1 = now
-  obj.movtex = texture(self:frameInfo())
-  --win:draw()
+  obj.movtex = movie:texture()
 end
 
 -- # Window
