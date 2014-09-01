@@ -61,7 +61,7 @@ public:
    *
    * If the read head reaches the end, returns false.
    */
-  bool nextFrame();
+  bool nextFrame(bool blocking = false);
 
   /** Load another asset. If the frame/image is the same size, internal memory
    * can be reused.

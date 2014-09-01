@@ -79,8 +79,6 @@ public:
     }
     stop();
 
-    printf("Start\n");
-
     // get ready for decoding
     // No need to retain or release: automatic garbage collection of queue in os x 10.8+
     decode_queue_ = dispatch_queue_create("org.lubyk media.Decoder Queue", DISPATCH_QUEUE_SERIAL);
@@ -105,7 +103,7 @@ public:
     if (!asset) {
       throw dub::Exception("Could not create AVAsset with url '%s'.", [[asset_url_ absoluteString] UTF8String]);
     }
-    printf("Created AVAsset with url '%s'.\n", [[asset_url_ absoluteString] UTF8String]);
+    // printf("Created AVAsset with url '%s'.\n", [[asset_url_ absoluteString] UTF8String]);
 
     // [asset loadValuesAsynchronouslyForKeys:@[@"tracks", @"duration"]
     //                     completionHandler:^{}];
@@ -137,9 +135,9 @@ public:
   }
 
 
-  bool nextFrame() {
+  bool nextFrame(bool blocking) {
     if (is_image_) {
-      return nextImageFrame();
+      return nextImageFrame(blocking);
     } else {
       return nextVideoFrame();
     }
@@ -156,66 +154,75 @@ public:
     }
   }
 
-  bool nextImageFrame() {
+  bool nextImageFrame(bool blocking) {
     if (!decode_queue_) start();
-    dispatch_async(decode_queue_, ^{
-      // Execute in decoder queue.
-      CGImageRef image_ref = NULL;
 
-      
-      CFStringRef opt_keys[] = {
-        kCGImageSourceShouldCache,
-        kCGImageSourceShouldAllowFloat,
-      };
+    if (blocking) {
+      getNextImageFrame(blocking);
+    } else {
+      dispatch_async(decode_queue_, ^{
+        // Execute in decoder queue.
+        getNextImageFrame(blocking);
+      });
+    }
 
-      CFTypeRef opt_values[] = {
-          // FIXME: Should this be true or false ??
-          kCFBooleanTrue,
-          kCFBooleanFalse,
-      };
-   
-      CFDictionaryRef options = CFDictionaryCreate(NULL,
+    return true;
+  }
+
+  void getNextImageFrame(bool blocking) {
+    CGImageRef image_ref = NULL;
+
+
+    CFStringRef opt_keys[] = {
+      kCGImageSourceShouldCache,
+      kCGImageSourceShouldAllowFloat,
+    };
+
+    CFTypeRef opt_values[] = {
+      // FIXME: Should this be true or false ??
+      kCFBooleanTrue,
+      kCFBooleanFalse,
+    };
+
+    CFDictionaryRef options = CFDictionaryCreate(NULL,
         (const void **) opt_keys,
         (const void **) opt_values,
         2,
         &kCFTypeDictionaryKeyCallBacks,
         &kCFTypeDictionaryValueCallBacks
-      );
+        );
 
-      // Create an image source from the URL.
-      CGImageSourceRef image_source = CGImageSourceCreateWithURL((CFURLRef)asset_url_, options);
+    // Create an image source from the URL.
+    CGImageSourceRef image_source = CGImageSourceCreateWithURL((CFURLRef)asset_url_, options);
 
-      CFRelease(options);
+    CFRelease(options);
 
-      // Make sure the image source exists before continuing
-      if (image_source == NULL){
-        // FIXME: error reporting on main thread.
-        printf("Could not decode image '%s' !", [[asset_url_ absoluteString] UTF8String]);
+    // Make sure the image source exists before continuing
+    if (image_source == NULL){
+      // FIXME: error reporting on main thread.
+      printf("Could not decode image '%s' !", [[asset_url_ absoluteString] UTF8String]);
+    } else {
+      // Create an image from the first item in the image source.
+      image_ref = CGImageSourceCreateImageAtIndex(image_source, 0, NULL);
+
+      CFRelease(image_source);
+
+      if (!decode_queue_) {
+        // reader could be stoped before image is decoded.
+        if (image_ref) {
+          CFRelease(image_ref);
+        }
       } else {
-        // Create an image from the first item in the image source.
-        image_ref = CGImageSourceCreateImageAtIndex(image_source, 0, NULL);
-
-        CFRelease(image_source);
-
-        if (!decode_queue_) {
-          // reader could be stoped before image is decoded.
-          if (image_ref) {
-            CFRelease(image_ref);
-          }
+        if (image_ref) {
+          CVImageBufferRef frame = pixelFromImage(image_ref);
+          processFrame(frame, blocking);
+          CFRelease(image_ref);
         } else {
-          if (image_ref) {
-            CVImageBufferRef frame = pixelFromImage(image_ref);
-            processFrame(frame);
-            CFRelease(image_ref);
-          } else {
-            // FIXME: error reporting on main thread.
-            printf("Could not decode image '%s' !", [[asset_url_ absoluteString] UTF8String]);
-          }
+          // FIXME: error reporting on main thread.
+          printf("Could not decode image '%s' !", [[asset_url_ absoluteString] UTF8String]);
         }
       }
-    });
-
-    return true;
+    }
   }
 
   CVImageBufferRef pixelFromImage(CGImageRef image) {
@@ -310,7 +317,7 @@ public:
           CMSampleBufferRef buffer = [asset_output copyNextSampleBuffer];
           if (buffer) {
             CVImageBufferRef frame = CMSampleBufferGetImageBuffer(buffer);
-            processFrame(frame);
+            processFrame(frame, false);
             CMSampleBufferInvalidate(buffer);
             CFRelease(buffer);   
           }
@@ -331,7 +338,7 @@ public:
   }
 
   //===================================================== CAPTURE CALLBACK
-  void processFrame(CVImageBufferRef frame) {
+  void processFrame(CVImageBufferRef frame, bool blocking) {
 
     // This code is the same as Camera.mm could we DRY without loosing performance ?
     if (CVPixelBufferLockBaseAddress(frame, kCVPixelBufferLock_ReadOnly) == 0) {
@@ -383,10 +390,14 @@ public:
       // Since we dispatch_sync, we wait until done and memcpy
       // is guaranteed to not occur during 'newFrame' callback.
 
-      dispatch_sync(dispatch_get_main_queue(), ^{
-        // Performed on main thread.
+      if (!blocking) {
+        dispatch_sync(dispatch_get_main_queue(), ^{
+          // Performed on main thread.
+          master_->newFrame();
+        });
+      } else {
         master_->newFrame();
-      });
+      }
       // wait until done to process next element in queue.
     }
   }
@@ -413,8 +424,8 @@ void Decoder::stop() {
   impl_->stop();
 }
 
-bool Decoder::nextFrame() {
-  return impl_->nextFrame();
+bool Decoder::nextFrame(bool blocking) {
+  return impl_->nextFrame(blocking);
 }
 
 void Decoder::loadAsset(const char *url) {

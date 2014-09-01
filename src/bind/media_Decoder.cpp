@@ -99,14 +99,21 @@ static int Decoder_stop(lua_State *L) {
   return dub::error(L);
 }
 
-/** bool media::Decoder::nextFrame()
+/** bool media::Decoder::nextFrame(bool blocking=false)
  * include/media/Decoder.h:64
  */
 static int Decoder_nextFrame(lua_State *L) {
   try {
     Decoder *self = *((Decoder **)dub::checksdata(L, 1, "media.Decoder"));
-    lua_pushboolean(L, self->nextFrame());
-    return 1;
+    int top__ = lua_gettop(L);
+    if (top__ >= 2) {
+      bool blocking = dub::checkboolean(L, 2);
+      lua_pushboolean(L, self->nextFrame(blocking));
+      return 1;
+    } else {
+      lua_pushboolean(L, self->nextFrame());
+      return 1;
+    }
   } catch (std::exception &e) {
     lua_pushfstring(L, "nextFrame: %s", e.what());
   } catch (...) {

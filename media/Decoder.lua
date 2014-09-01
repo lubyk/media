@@ -42,7 +42,7 @@ local IMAGE_EXT = {
 }
 
 local nextFrame = lib.nextFrame
-local nextImageInFolder
+local getImageInFolder, prevImageInFolder
 
 -- # Constructor
 --
@@ -69,10 +69,9 @@ local function new(asset_url, new_frame)
     self = o_new(true)
     self.images = images
     self.images_i = 0
-    self.nextFrame = nextImageInFolder
+    self.nextFrame = getImageInFolder
   else
     local _, _, ext = string.find(asset_url, "%.(%w+)$")
-    print(ext)
     local is_image = ext and IMAGE_EXT[string.lower(ext)]
     self = o_new(is_image)
     if asset_url then
@@ -91,6 +90,15 @@ function lib.new(...)
 end
 
 -- # Methods
+
+-- Ask for next frame. If `blocking` is true, decode frame synchronously.
+-- FIXME: blocking only works for images at the moment.
+-- function lib:nextFrame(blocking)
+
+-- Ask for the previous frame (folder of images only).
+function lib:prevFrame(blocking)
+  return getImageInFolder(self, blocking, -1)
+end
 
 -- Get a lightuserdata pointer to the current frame data. The content of the
 -- referenced memory can changes between 'newFrame' calls.
@@ -149,8 +157,13 @@ end
 -- function lib:newFrame
 
 ---------- PRIVATE
-function nextImageInFolder(self)
-  local i = self.images_i + 1
+function getImageInFolder(self, blocking, dir)
+  local blocking = blocking or false
+  local dir = dir or 1
+  local i = self.images_i + dir
+  if i <= 0 then
+    i = #self.images
+  end
   local path = self.images[i]
   if not path then
     i = 1
@@ -158,7 +171,7 @@ function nextImageInFolder(self)
   end
   self.images_i = i
   self:loadAsset(path)
-  return nextFrame(self)
+  return nextFrame(self, blocking)
 end
 
 return lib
