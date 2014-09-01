@@ -278,6 +278,11 @@ public:
         rgbColorSpace, 
         kCGImageAlphaNoneSkipLast);
 
+    
+    // Do not flip image so that this works the same way as video.
+    // or find a way to flip video image.
+    // CGContextTranslateCTM(context, 0, height);
+    // CGContextScaleCTM(context, 1.0, -1.0);
     CGContextDrawImage(context, CGRectMake(0, 0, width, height), image);
 
     CGColorSpaceRelease(rgbColorSpace);

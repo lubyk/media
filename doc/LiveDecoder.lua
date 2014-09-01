@@ -63,16 +63,16 @@ local function square()
   --
   -- Create four vertices, one for each corner.
   vb:push3D(-1.0, -1.0, 0.0)
-  tex:push2D(0.0, 1.0)
-
-  vb:push3D( 1.0, -1.0, 0.0)
-  tex:push2D(1.0, 1.0)
-
-  vb:push3D(-1.0,  1.0, 0.0)
   tex:push2D(0.0, 0.0)
 
-  vb:push3D( 1.0,  1.0, 0.0)
+  vb:push3D( 1.0, -1.0, 0.0)
   tex:push2D(1.0, 0.0)
+
+  vb:push3D(-1.0,  1.0, 0.0)
+  tex:push2D(0.0, 1.0)
+
+  vb:push3D( 1.0,  1.0, 0.0)
+  tex:push2D(1.0, 1.0)
 
   -- Colors for the positions above.
   cb:pushV4(four.Color.red())
@@ -138,6 +138,8 @@ effect.vertex = four.Effect.Shader [[
   out vec2 v_tex;
   void main()
   {
+    // Video decoding and image decoding are inverted by default on mac.
+    // Why... no idea.
     v_tex = tex;
     v_vertex = vertex;
     v_color  = color;
@@ -162,11 +164,12 @@ effect.fragment = four.Effect.Shader [[
   out vec4 color;
 
   void main() {
+    vec2 texr = vec2(v_tex.x, 1-v_tex.y);
     vec2 speed = vec2(1, 1);
-    vec2 scale = vec2(30, 80);
-    vec2 vr = v_tex + 0.05 * vec2(0.5 + 0.5 * sin(scale.x * sin((speed.x+0.2)*t) * v_tex.x), 0.5 + 0.5 * sin(scale.y * sin((speed.y + 0)*t) * v_tex.y));
-    vec2 vg = v_tex + 0.05 * vec2(0.5 + 0.5 * sin(scale.x * sin((speed.x+0.1)*t) * v_tex.x), 0.5 + 0.5 * sin(scale.y * sin((speed.y + 0)*t) * v_tex.y));
-    vec2 vb = v_tex + 0.05 * vec2(0.5 + 0.5 * sin(scale.x * sin((speed.x-0.3)*t) * v_tex.x), 0.5 + 0.5 * sin(scale.y * sin((speed.y + 0.2)*t) * v_tex.y));
+    vec2 scale = v_tex.y * vec2(30, 80);
+    vec2 vr = texr + 0.05 * vec2(0.5 + 0.5 * sin(scale.x * sin((speed.x+0.2)*t) * texr.x), 0.5 + 0.5 * sin(scale.y * sin((speed.y + 0)*t) * texr.y));
+    vec2 vg = texr + 0.05 * vec2(0.5 + 0.5 * sin(scale.x * sin((speed.x+0.1)*t) * texr.x), 0.5 + 0.5 * sin(scale.y * sin((speed.y + 0)*t) * texr.y));
+    vec2 vb = texr + 0.05 * vec2(0.5 + 0.5 * sin(scale.x * sin((speed.x-0.3)*t) * texr.x), 0.5 + 0.5 * sin(scale.y * sin((speed.y + 0.2)*t) * texr.y));
     vec4 imgr = texture(movtex, vr);
     vec4 imgg = texture(movtex, vg);
     vec4 imgb = texture(movtex, vb);
@@ -177,9 +180,10 @@ effect.fragment = four.Effect.Shader [[
     //color = vec4(r/4 +  img.r, g/4 + img.g, b/4 + img.b, 1);
     // color = vec4(r ,g, b, 1);
 
-    vec4 img = texture(movtex, v_tex);
+    //vec4 img = texture(movtex, vec2(v_tex.x, 1 - v_tex.y));
     color = vec4(imgr.r, imgg.g, imgb.b, 1);
-    color = vec4(img.r, img.g, img.b, 1);
+    //color = vec4(v_tex.x, v_tex.x, v_tex.x, 1);
+    //color = vec4(img.r, img.g, img.b, 1);
   }
 ]]
 

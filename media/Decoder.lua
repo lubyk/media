@@ -71,7 +71,8 @@ local function new(asset_url, new_frame)
     self.images_i = 0
     self.nextFrame = nextImageInFolder
   else
-    local _, _, ext = string.find(asset_url, "%.(%w+)")
+    local _, _, ext = string.find(asset_url, "%.(%w+)$")
+    print(ext)
     local is_image = ext and IMAGE_EXT[string.lower(ext)]
     self = o_new(is_image)
     if asset_url then
